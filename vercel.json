@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/routine", "destination": "/api/routine" }
+  ]
+}
