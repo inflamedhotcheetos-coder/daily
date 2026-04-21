@@ -3,13 +3,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   const PAGE_IDS = {
-    0: '349bce28e7f9812eb1eaf7dc04f7060c', // Sunday
-    1: '349bce28e7f98163a43aca08a206db6e', // Monday
-    2: '349bce28e7f981b48a02d1ad33c05a35', // Tuesday
-    3: '349bce28e7f981838af9feeff1363b10', // Wednesday
-    4: '349bce28e7f981f08927f6494f566c9f', // Thursday
-    5: '349bce28e7f9818f9311cc96ca74e548', // Friday
-    6: '349bce28e7f98100a97ae858593d02ab', // Saturday
+    0: '349bce28-e7f9-812e-b1ea-f7dc04f7060c', // Sunday
+    1: '349bce28-e7f9-8163-a43a-ca08a206db6e', // Monday
+    2: '349bce28-e7f9-81b4-8a02-d1ad33c05a35', // Tuesday
+    3: '349bce28-e7f9-8183-8af9-feeff1363b10', // Wednesday
+    4: '349bce28-e7f9-81f0-8927-f6494f566c9f', // Thursday
+    5: '349bce28-e7f9-818f-9311-cc96ca74e548', // Friday
+    6: '349bce28-e7f9-8100-a97a-e858593d02ab', // Saturday
   };
 
   const day = req.query.day !== undefined ? parseInt(req.query.day) : new Date().getDay();
