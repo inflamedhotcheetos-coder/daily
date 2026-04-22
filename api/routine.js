@@ -26,39 +26,38 @@ export default async function handler(req, res) {
     const blocks = [];
     for (const block of data.results) {
       if (block.type === 'column_list') {
-       if (block.type === 'column_list') {
-  const cols = await fetchChildren(block.id);
-  block._columns = [];
-  for (const col of cols.results) {
-    const colChildren = await fetchChildren(col.id);
-    const colBlocks = [];
-    for (const b of colChildren.results) {
-      if (b.type === 'synced_block') {
-        const syncedId = b.synced_block?.synced_from?.block_id || b.id;
-        const syncedChildren = await fetchChildren(syncedId);
-        for (const sb of syncedChildren.results) {
-          if (sb.type === 'table') {
-            const rows = await fetchChildren(sb.id);
-            sb._rows = rows.results;
+        const cols = await fetchChildren(block.id);
+        block._columns = [];
+        for (const col of cols.results) {
+          const colChildren = await fetchChildren(col.id);
+          const colBlocks = [];
+          for (const b of colChildren.results) {
+            if (b.type === 'synced_block') {
+              const syncedId = b.synced_block?.synced_from?.block_id || b.id;
+              const syncedChildren = await fetchChildren(syncedId);
+              for (const sb of syncedChildren.results) {
+                if (sb.type === 'table') {
+                  const rows = await fetchChildren(sb.id);
+                  sb._rows = rows.results;
+                }
+                colBlocks.push(sb);
+              }
+            } else if (b.type === 'table') {
+              const rows = await fetchChildren(b.id);
+              b._rows = rows.results;
+              colBlocks.push(b);
+            } else {
+              colBlocks.push(b);
+            }
           }
-          colBlocks.push(sb);
+          block._columns.push(colBlocks);
         }
-      } else if (b.type === 'table') {
-        const rows = await fetchChildren(b.id);
-        b._rows = rows.results;
-        colBlocks.push(b);
-      } else {
-        colBlocks.push(b);
+      } else if (block.type === 'heading_2' || block.type === 'table') {
+        if (block.type === 'table') {
+          const rows = await fetchChildren(block.id);
+          block._rows = rows.results;
+        }
       }
-    }
-    block._columns.push(colBlocks);
-  }
-} else if (block.type === 'heading_2' || block.type === 'table') {
-  if (block.type === 'table') {
-    const rows = await fetchChildren(block.id);
-    block._rows = rows.results;
-  }
-}
         });
         const colsData = await colsRes.json();
         block._columns = [];
