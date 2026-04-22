@@ -106,7 +106,6 @@ async function load() {
       if (block.type === 'column_list' && block._columns) {
         // Only render the first column (routines), skip second (to-dos/notes)
         html += `<div>${renderColumn(block._columns[0])}</div>`;
-        html += `<div>${renderColumn(block._columns[0])}</div>`;
       }
     }
     html += '</div>';
