@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     6: '349bce28-e7f9-8100-a97a-e858593d02ab',
   };
 
-  const day = req.query.day !== undefined ? parseInt(req.query.day) : new Date().getDay();
+  const day = req.query.day !== undefined ? parseInt(req.query.day) : new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })).getDay();
   const pageId = PAGE_IDS[day];
 
   try {
