@@ -119,7 +119,7 @@ function renderBlocks(blocks) {
       const text = getRichText(block.heading_2?.rich_text);
       html += `<div class="section-title">${text}</div>`;
     }
-    if (block.type === 'table' && block._rows) {
+    if (block.type === 'table') {
       html += renderTable(block._rows);
     }
   }
