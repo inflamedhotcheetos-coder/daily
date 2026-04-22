@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   const PAGE_IDS = {
     0: '349bce28-e7f9-812e-b1ea-f7dc04f7060c',
@@ -14,13 +15,54 @@ export default async function handler(req, res) {
   const day = req.query.day !== undefined ? parseInt(req.query.day) : new Date().getDay();
   const pageId = PAGE_IDS[day];
 
-  const response = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`, {
-    headers: {
-      'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
-      'Notion-Version': '2022-06-28',
+  try {
+    const response = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
+        'Notion-Version': '2022-06-28',
+      }
+    });
+    const data = await response.json();
+    const blocks = [];
+    for (const block of data.results) {
+      if (block.type === 'column_list') {
+        const colsRes = await fetch(`https://api.notion.com/v1/blocks/${block.id}/children?page_size=100`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
+            'Notion-Version': '2022-06-28',
+          }
+        });
+        const colsData = await colsRes.json();
+        block._columns = [];
+        for (const col of colsData.results) {
+          const colChildRes = await fetch(`https://api.notion.com/v1/blocks/${col.id}/children?page_size=100`, {
+            headers: {
+              'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
+              'Notion-Version': '2022-06-28',
+            }
+          });
+          const colChildData = await colChildRes.json();
+          const colBlocks = [];
+          for (const b of colChildData.results) {
+            if (b.type === 'table') {
+              const rRes = await fetch(`https://api.notion.com/v1/blocks/${b.id}/children?page_size=100`, {
+                headers: {
+                  'Authorization': `Bearer ${process.env.NOTION_SECRET}`,
+                  'Notion-Version': '2022-06-28',
+                }
+              });
+              const rData = await rRes.json();
+              b._rows = rData.results;
+            }
+            colBlocks.push(b);
+          }
+          block._columns.push(colBlocks);
+        }
+      }
+      blocks.push(block);
     }
-  });
-
-  const data = await response.json();
-  res.status(200).json(data);
+    res.status(200).json({ blocks, day });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
