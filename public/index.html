@@ -105,8 +105,10 @@ async function load() {
     let html = '<div class="columns">';
     for (const block of data.blocks) {
       if (block.type === 'column_list' && block._columns) {
-        // Only render the first column (routines), skip second (to-dos/notes)
-        html += `<div>${renderColumn(block._columns[0])}</div>`;
+    html += renderColumn(block._columns[0]);
+      } else if (block.type === 'heading_2' || block.type === 'table') {
+        html += renderColumn(data.blocks);
+        break;
       }
     }
     html += '</div>';
