@@ -8,6 +8,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
     background: transparent;
     color: rgb(55, 53, 47);
     font-size: 14px;
@@ -115,14 +116,22 @@ function toRichTextHTML(arr) {
     return `<span style="${styles.join('')}">${escapeHTML(t.plain_text || '')}</span>`;
   }).join('');
 }
+function getCellStyle(arr, fallbackColor = '') {
+  const firstColor = arr?.find?.(t => t?.annotations?.color && t.annotations.color !== 'default')?.annotations?.color || fallbackColor;
+  if (!firstColor) return '';
+  return notionColorToCSS(firstColor);
+}
 function renderTable(rows) {
   if (!rows || rows.length === 0) return '';
   let html = '<table><tbody>';
   for (const row of rows) {
     const cells = row.table_row?.cells || [];
+    const rowColor = row.table_row?.color && row.table_row.color !== 'default' ? row.table_row.color : '';
     const time = toRichTextHTML(cells[0]);
     const activity = toRichTextHTML(cells[1]);
-    html += `<tr><th class="cell-text">${time}</th><td class="cell-text">${activity}</td></tr>`;
+    const timeStyle = getCellStyle(cells[0], rowColor);
+    const activityStyle = getCellStyle(cells[1], rowColor);
+    html += `<tr><th class="cell-text" style="${timeStyle}">${time}</th><td class="cell-text" style="${activityStyle}">${activity}</td></tr>`;
   }
   html += '</tbody></table>';
   return html;
