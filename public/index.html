@@ -8,17 +8,19 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-font-size: 16px;
     background: transparent;
     color: rgb(55, 53, 47);
     font-size: 14px;
     padding: 8px;
   }
-  .columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    align-items: start;
+  .widget {
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .routine-column {
+    width: fit-content;
+    max-width: 100%;
   }
   .section-title {
     font-size: 1.25em;
@@ -55,6 +57,9 @@ font-size: 16px;
     background: white;
     color: rgb(55, 53, 47);
   }
+  .cell-text span {
+    white-space: pre-wrap;
+  }
   .error { color: #e05252; padding: 16px 0; font-size: 16px; }
   .loading { color: rgba(55,53,47,0.4); padding: 16px 0; font-size: 16px; }
 </style>
@@ -62,18 +67,62 @@ font-size: 16px;
 <body>
 <div id="app"><p class="loading">Loading your routine…</p></div>
 <script>
-function getRichText(arr) {
+function escapeHTML(str = '') {
+  return str
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+function notionColorToCSS(color) {
+  if (!color || color === 'default') return '';
+  const colorMap = {
+    gray: '#787774',
+    brown: '#9f6b53',
+    orange: '#d9730d',
+    yellow: '#cb912f',
+    green: '#448361',
+    blue: '#337ea9',
+    purple: '#9065b0',
+    pink: '#c14c8a',
+    red: '#d44c47',
+    gray_background: 'rgba(241,241,239,1)',
+    brown_background: 'rgba(244,238,238,1)',
+    orange_background: 'rgba(251,236,221,1)',
+    yellow_background: 'rgba(251,243,219,1)',
+    green_background: 'rgba(237,243,236,1)',
+    blue_background: 'rgba(231,243,248,1)',
+    purple_background: 'rgba(244,240,247,1)',
+    pink_background: 'rgba(249,238,243,1)',
+    red_background: 'rgba(253,235,236,1)',
+  };
+  const value = colorMap[color];
+  if (!value) return '';
+  return color.endsWith('_background') ? `background: ${value};` : `color: ${value};`;
+}
+function toRichTextHTML(arr) {
   if (!arr || arr.length === 0) return '';
-  return arr.map(t => t.plain_text || '').join('');
+  return arr.map(t => {
+    const annotations = t.annotations || {};
+    const styles = [];
+    if (annotations.bold) styles.push('font-weight: 600;');
+    if (annotations.italic) styles.push('font-style: italic;');
+    if (annotations.strikethrough) styles.push('text-decoration: line-through;');
+    if (annotations.underline) styles.push('text-decoration: underline;');
+    if (annotations.code) styles.push('font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: rgba(135,131,120,.15); padding: 0 .25em; border-radius: 3px;');
+    if (annotations.color) styles.push(notionColorToCSS(annotations.color));
+    return `<span style="${styles.join('')}">${escapeHTML(t.plain_text || '')}</span>`;
+  }).join('');
 }
 function renderTable(rows) {
   if (!rows || rows.length === 0) return '';
   let html = '<table><tbody>';
   for (const row of rows) {
     const cells = row.table_row?.cells || [];
-    const time = getRichText(cells[0]);
-    const activity = getRichText(cells[1]);
-    html += `<tr><th>${time}</th><td>${activity}</td></tr>`;
+    const time = toRichTextHTML(cells[0]);
+    const activity = toRichTextHTML(cells[1]);
+    html += `<tr><th class="cell-text">${time}</th><td class="cell-text">${activity}</td></tr>`;
   }
   html += '</tbody></table>';
   return html;
@@ -82,7 +131,7 @@ function renderColumn(blocks) {
   let html = '';
   for (const block of blocks) {
     if (block.type === 'heading_2') {
-      const text = getRichText(block.heading_2?.rich_text);
+      const text = toRichTextHTML(block.heading_2?.rich_text);
       html += `<div class="routine-section"><div class="section-title">${text}</div>`;
     }
     if (block.type === 'table' && block._rows) {
@@ -98,11 +147,11 @@ async function load() {
     const res = await fetch('/api/routine');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    let html = '<div class="columns">';
+    let html = '<div class="widget">';
     for (const block of data.blocks) {
       if (block.type === 'column_list' && block._columns) {
         // Only render the first column (routines), skip second (to-dos/notes)
-        html += `<div>${renderColumn(block._columns[0])}</div>`;
+        html += `<div class="routine-column">${renderColumn(block._columns[0])}</div>`;
       }
     }
     html += '</div>';
